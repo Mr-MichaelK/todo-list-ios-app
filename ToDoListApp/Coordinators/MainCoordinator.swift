@@ -16,6 +16,14 @@ class MainCoordinator: Coordinator {
     }
     
     func start() {
-        
+        let tasksVC = TasksViewController()
+        tasksVC.coordinator = self
+        navigationController.pushViewController(tasksVC, animated: false)
+    }
+    
+    func goToDetailsVC(task: Task) {
+        let detailsVC = DetailsViewController(task: task)
+        detailsVC.coordinator = self
+        navigationController.pushViewController(detailsVC, animated: true)
     }
 }

@@ -8,6 +8,7 @@
 import UIKit
 
 class TasksViewController: UIViewController {
+    weak var coordinator: MainCoordinator?
 
     override func viewDidLoad() {
         super.viewDidLoad()
