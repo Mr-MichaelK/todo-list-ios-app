@@ -7,16 +7,16 @@
 
 import UIKit
 
-class TasksViewController: UIViewController, UITableViewDataSource {
+class TasksViewController: UIViewController, UITableViewDataSource, TaskCellDelegate {
     
     weak var coordinator: MainCoordinator?
     
-    var tasks: [Task] = [
-        Task(title: "Go shopping", isCompleted: false),
-        Task(title: "Do HW", isCompleted: true)
-    ]
-    
+    var tasks: [Task] {
+        return TasksManager.shared.tasks
+    }
+
     let tableView = UITableView()
+    
     let taskInput: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Enter task"
@@ -30,7 +30,7 @@ class TasksViewController: UIViewController, UITableViewDataSource {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.backgroundColor = UIColor.systemBlue
         button.setTitle("+", for: .normal)
-        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 26)
         button.tintColor = .white
         button.layer.cornerRadius = 22
         button.configuration?.titleAlignment = .center
@@ -52,12 +52,16 @@ class TasksViewController: UIViewController, UITableViewDataSource {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        
+                
         stackView.addArrangedSubview(taskInput)
         stackView.addArrangedSubview(addButton)
         
         view.addSubview(stackView)
         view.addSubview(tableView)
+        
+        let doubleTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        doubleTapRecognizer.numberOfTapsRequired = 2
+        tableView.addGestureRecognizer(doubleTapRecognizer)
         
         addButton.addTarget(self, action: #selector(addButtonTapped), for: .touchUpInside)
         
@@ -83,16 +87,35 @@ class TasksViewController: UIViewController, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return tasks.count
+        return TasksManager.shared.tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! TaskCell
-        let task = tasks[indexPath.row]
+        let task = TasksManager.shared.tasks[indexPath.row]
         cell.taskLabel.text = task.title
         cell.checkBox.setChecked(task.isCompleted)
+        cell.delegate = self  // ✅ Hook this up
         return cell
     }
+
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle,
+                   forRowAt indexPath:IndexPath) {
+        if editingStyle == .delete {
+            TasksManager.shared.removeTask(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        }
+    }
+    
+    func didToggleCheckbox(in cell: TaskCell) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        var updatedTask = TasksManager.shared.tasks[indexPath.row]
+        updatedTask.isCompleted.toggle()
+        TasksManager.shared.updateTask(at: indexPath.row, with: updatedTask)
+        tableView.reloadRows(at: [indexPath], with: .automatic)
+    }
+
     
     @objc func addButtonTapped() {
         guard let taskText = taskInput.text, !taskText.isEmpty else {
@@ -100,10 +123,19 @@ class TasksViewController: UIViewController, UITableViewDataSource {
             return
         }
         let newTask = Task(title: taskText, isCompleted: false)
-        tasks.append(newTask)
+        TasksManager.shared.addTask(newTask)
         tableView.reloadData()
         taskInput.text = ""
         taskInput.resignFirstResponder()
+    }
+    
+    @objc func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: tableView)
+        
+        if let indexPath = tableView.indexPathForRow(at: location) {
+            let selectedTask = TasksManager.shared.tasks[indexPath.row]
+            coordinator?.goToDetailsVC(task: selectedTask)
+        }
     }
 
 }

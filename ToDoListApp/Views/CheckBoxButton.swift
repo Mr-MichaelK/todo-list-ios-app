@@ -11,7 +11,8 @@ import UIKit
 class CheckboxButton: UIButton {
     private(set) var isChecked = false
 
-    // Set images for checked/unchecked
+    var onToggle: ((Bool) -> Void)?
+
     private let checkedImage = UIImage(systemName: "checkmark.square.fill")
     private let uncheckedImage = UIImage(systemName: "square")
 
@@ -28,13 +29,14 @@ class CheckboxButton: UIButton {
     private func commonInit() {
         self.setImage(uncheckedImage, for: .normal)
         self.addTarget(self, action: #selector(toggleCheck), for: .touchUpInside)
-        self.tintColor = .systemBlue // Or any color you like
+        self.tintColor = .systemBlue
     }
 
     @objc private func toggleCheck() {
         isChecked.toggle()
         let image = isChecked ? checkedImage : uncheckedImage
         self.setImage(image, for: .normal)
+        onToggle?(isChecked)  // 🔥 Notify the outside world
     }
 
     func setChecked(_ checked: Bool) {

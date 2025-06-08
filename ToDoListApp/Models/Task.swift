@@ -8,6 +8,6 @@
 import Foundation
 
 struct Task: Codable {
-    let title: String
-    let isCompleted: Bool
+    var title: String
+    var isCompleted: Bool
 }
